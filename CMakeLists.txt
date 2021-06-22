@@ -5,11 +5,13 @@ include(CTest)
 enable_testing()
 
 set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_STANDARD 17)
 
 add_executable(main
-    src/token.cpp
+    src/tokenizer.cpp
     src/main.cpp
     src/log/log.cpp
+    src/token.cpp
 )
 
 target_include_directories(main

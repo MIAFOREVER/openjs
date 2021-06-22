@@ -1,6 +1,9 @@
 #ifndef _AST_H_
 #define _AST_H_
+#include "tokenizer.h"
 #include "token.h"
+#include "log/log.h"
+#include "defination.h"
 namespace openjs{
 class ExpAst{
     
@@ -68,14 +71,19 @@ class FunctionAst {
 class BuildTree {
 
     void Run(){
-        auto t = std::make_unique<Token>();   
-        token_type = t->GetTokenType();
+        auto t = std::make_unique<Tokenizer>();   
+        // Get token from Token class
+        token = t->GetToken();
         while(!TokenIsEnd()){
             auto token_tmp = GetToken();
-            if(token_tmp == Token::TOKEN_FUNCTION)
+            if(token_tmp.GetTokenType() == Defination::TOKEN_FUNCTION){
+                NextToken();
                 HandleFunction();
-            else if(token_tmp == Token::TOKEN_ID)
+            }
+            else if(token_tmp.GetTokenType() == Defination::TOKEN_ID){
+                NextToken();
                 HandleCallFunction();
+            }
         }
     }
 
@@ -85,11 +93,52 @@ class BuildTree {
     }
 
     void HandleFunction(){
-        
+        auto proto = HandleProtoType();
+        if(!proto)
+            LOG::ERROR("Parser function proto type error");
+        NextToken();
+        if(!GetToken().GetTokenType() == Defination::TOKEN_SCOPE_BEGIN){
+            LOG::ERROR("Parser function scope begin error");
+        }
+        HandleExp();
+        NextToken();
+        if(!GetToken().GetTokenType() == Defination::TOKEN_SCOPE_END){
+            LOG::ERROR("Parser function scope end error");
+        }
+        LOG::INFO("Parser function sucessfully");
     }
 
-    Token::token GetToken(){
-        return token_type[token_index];
+    std::unique_ptr<ExpAst> HandleExp(){
+
+    }
+
+    std::unique_ptr<PrototypeAst> HandleProtoType(){
+        if(!GetToken().GetTokenType() == Defination::TOKEN_ID)
+            LOG::ERROR("Parser proto id error");
+        // store function name
+        std::string function_name = GetToken().GetTokenName();
+        NextToken();
+        if(!GetToken().GetTokenType() == Defination::TOKEN_SMALL_SCOPE_BEGIN)
+            LOG::ERROR("Parser proto scope begin");
+        std::vector<std::string> args;
+        while(GetToken().GetTokenType() == Defination::TOKEN_ID){
+            args.push_back(GetToken().GetTokenName());
+            NextToken();
+            if(GetToken().GetTokenType() != Defination::TOKEN_COMMA)
+                break;
+        }
+        if(!GetToken().GetTokenType() == Defination::TOKEN_SMALL_SCOPE_END)
+            LOG::ERROR("Parser proto scope end");
+        
+        LOG::INFO("Parser proto type successful");
+        return std::make_unique<PrototypeAst>(function_name, args);
+    }
+
+    Token GetToken(){
+        if(!TokenIsEnd())
+            return token[token_index];
+        else
+            return Token();
     }
 
     void NextToken(){
@@ -97,12 +146,12 @@ class BuildTree {
     }
 
     bool TokenIsEnd(){
-        if(token_index < token_type.size() - 1)
+        if(token_index < token.size() - 1)
             return false;
         return true;
     }
     int token_index = 0;
-    std::vector<Token::token> token_type;
+    std::vector<Token> token;
 };
 
 }

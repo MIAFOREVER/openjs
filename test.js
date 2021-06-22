@@ -8,4 +8,4 @@ function fibo(num,pl) {//[spdlv5g4qgr]
 }
 
 
-function test(num){if(n>200){return false}}
+function test(num){if(n>200){return false}}//

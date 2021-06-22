@@ -1,6 +1,6 @@
-#include "token.h"
+#include "tokenizer.h"
 int main(int argc, char* argv[]){
-    openjs::Token t;
+    openjs::Tokenizer t;
     std::string tmp = argv[1];
     t.SetFilename(tmp);
     t.Run();
