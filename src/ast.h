@@ -33,6 +33,13 @@ public:
     : Op(op), LHS(std::move(LHS)), RHS(std::move(RHS)) {}
 };
 
+class MutiExpAst : public ExpAst {
+    std::vector<std::unique_ptr<ExpAst>> exp;
+
+public:
+    MutiExpAst(std::vector<std::unique_ptr<ExpAst>> _exp): exp(_exp){}
+};
+
 /// CallExpAst - Expression class for function calls.
 class CallExpAst : public ExpAst {
     std::string Callee;
@@ -87,29 +94,47 @@ class BuildTree {
         }
     }
 
-    void HandleCallFunction(){
+    std::unique_ptr<ExpAst> HandleCallFunction(){
         // if()
 
     }
 
-    void HandleFunction(){
+    std::unique_ptr<FunctionAst> HandleFunction(){
         auto proto = HandleProtoType();
         if(!proto)
             LOG::ERROR("Parser function proto type error");
-        NextToken();
         if(!GetToken().GetTokenType() == Defination::TOKEN_SCOPE_BEGIN){
             LOG::ERROR("Parser function scope begin error");
         }
-        HandleExp();
         NextToken();
+        auto exp = HandleExp();
         if(!GetToken().GetTokenType() == Defination::TOKEN_SCOPE_END){
             LOG::ERROR("Parser function scope end error");
         }
+        NextToken();
+        
         LOG::INFO("Parser function sucessfully");
+        return std::make_unique<FunctionAst>(proto, exp);
     }
 
-    std::unique_ptr<ExpAst> HandleExp(){
+    std::unique_ptr<MutiExpAst> HandleExp(){
+        std::vector<std::unique_ptr<ExpAst>> exp;
 
+        
+        NextToken();
+        return std::make_unique<MutiExpAst>(exp);
+    }
+
+    std::unique_ptr<ExpAst> HandleExternExp(){
+
+    }
+
+    std::unique_ptr<ExpAst> ParserNumber(){
+
+    }
+
+    std::unique_ptr<ExpAst> ParserId(){
+        
     }
 
     std::unique_ptr<PrototypeAst> HandleProtoType(){
@@ -131,6 +156,8 @@ class BuildTree {
             LOG::ERROR("Parser proto scope end");
         
         LOG::INFO("Parser proto type successful");
+        // consume this token.
+        NextToken();
         return std::make_unique<PrototypeAst>(function_name, args);
     }
 
