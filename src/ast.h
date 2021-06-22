@@ -67,11 +67,11 @@ class PrototypeAst {
 /// FunctionAst - This class represents a function definition itself.
 class FunctionAst {
     std::unique_ptr<PrototypeAst> Proto;
-    std::unique_ptr<ExpAst> Body;
+    std::unique_ptr<MutiExpAst> Body;
 
     public:
     FunctionAst(std::unique_ptr<PrototypeAst> Proto,
-                std::unique_ptr<ExpAst> Body)
+                std::unique_ptr<MutiExpAst> Body)
         : Proto(std::move(Proto)), Body(std::move(Body)) {}
 };
 
@@ -95,7 +95,23 @@ class BuildTree {
     }
 
     std::unique_ptr<ExpAst> HandleCallFunction(){
-        // if()
+        if(!GetToken().GetTokenType() == Defination::TOKEN_ID)
+            LOG::ERROR("Parser call token id error");
+        NextToken();
+        if(!GetToken().GetTokenType() == Defination::TOKEN_SMALL_SCOPE_BEGIN)
+            LOG::ERROR("Parser call '(' error");
+        NextToken();
+        auto exp = HandlePrimaryExp();
+
+        while(exp){
+            if(!GetToken().GetTokenType() == Defination::TOKEN_COMMA){
+                NextToken();
+                break;
+            }
+        }
+    }
+
+    std::unique_ptr<ExpAst> HandlePrimaryExp(){
 
     }
 
@@ -121,9 +137,12 @@ class BuildTree {
         std::vector<std::unique_ptr<ExpAst>> exp;
 
         
+
         NextToken();
         return std::make_unique<MutiExpAst>(exp);
     }
+
+
 
     std::unique_ptr<ExpAst> HandleExternExp(){
 
