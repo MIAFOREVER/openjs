@@ -6,6 +6,11 @@
 
 namespace openjs{
 
+Tokenizer::Tokenizer(std::string _filename){
+    SetFilename(_filename);
+    Run();
+}
+
 void Tokenizer::Run(){
     SetOperatorCode();
     ReadFile(filename);
@@ -19,19 +24,23 @@ void Tokenizer::Run(){
 
 void Tokenizer::PreProcess(std::string s){
     int last_id = 0;
-    for(int i = 0; i < s.size(); i++){
-        // Delete Annotation
+    int i = 0;
+    // Here is use whlile rather than for is bacause of the continue sentence
+    // 'for(int i = 0; i < size(); i++)'
+    // the 'continue' is still run i++ at the end;
+    // 'while(){}' don't
+    while(i < s.size()){
+        // Delete annotation
         if(s[i] == '/'){
             if(i + 1 < s.size()){
                 if(s[i + 1] == '/'){
-                    if(i + 2 == s.size()){
-                        i += 2;
-                        last_id = i;
-                        continue;
-                    }
-                    int found = s.find('\n', i + 1);
+                    int found = s.find('\n', i + 2);
                     if(found != std::string::npos){
                         i = found + 1;
+                        last_id = i;
+                        continue;
+                    }else{
+                        i = s.size();
                         last_id = i;
                         continue;
                     }
@@ -57,6 +66,7 @@ void Tokenizer::PreProcess(std::string s){
 
             last_id = i + 1;
         }
+        i ++;
     }
 }
 
