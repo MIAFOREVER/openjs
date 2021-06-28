@@ -14,7 +14,7 @@ Tokenizer::Tokenizer(std::string _filename){
 void Tokenizer::Run(){
     SetOperatorCode();
     ReadFile(filename);
-    PreProcess(file_stream);
+    Split(file_stream);
     
     SetRegex();
     RunTokenizer();
@@ -22,7 +22,11 @@ void Tokenizer::Run(){
     DebugPrintToken();
 }
 
-void Tokenizer::PreProcess(std::string s){
+std::vector<std::string> Tokenizer::GetSourceCode(){
+    return source_code;
+}
+
+void Tokenizer::Split(std::string s){
     int last_id = 0;
     int i = 0;
     // Here is use whlile rather than for is bacause of the continue sentence
@@ -36,6 +40,10 @@ void Tokenizer::PreProcess(std::string s){
                 if(s[i + 1] == '/'){
                     int found = s.find('\n', i + 2);
                     if(found != std::string::npos){
+                        position_line ++;
+                        position_char = 0;
+
+
                         i = found + 1;
                         last_id = i;
                         continue;
@@ -48,31 +56,38 @@ void Tokenizer::PreProcess(std::string s){
             }
         }
         if(InOperatorCode(s[i])){
-            //std::cout << "char:\t" << "[" << s[i] << "]" << std::endl;
+            if(s[i] == '\n'){
+                position_line ++;
+                position_char = 0;
+            }
             std::string tmp;
   
             // push_back Tokenizer
             tmp.assign(s, last_id, i - last_id);
             //std::cout << "token:\t" << "[" << tmp << "]" << std::endl;
             if(!tmp.empty() && tmp != " " && tmp != "\n"){
-                tk.push_back(tmp);
+                tk.push_back(std::make_shared<Token>(std::move(tmp)));
+                tk.back()->SetPosition(position_line, position_char);
             }
             
             // push_back Operator
             if(s[i] != ' ' && s[i] != '\n'){
                 tmp.assign(s, i, 1);
-                tk.push_back(tmp);
+                tk.push_back(std::make_shared<Token>(std::move(tmp)));
+                tk.back()->SetPosition(position_line, position_char);
             }
 
             last_id = i + 1;
         }
+        position_char ++;
         i ++;
     }
 }
 
 void Tokenizer::DebugPrintToken(){
-    for(int i  = 0; i < tk.size(); i++){
-        LOG::INFO(tk[i] + ":" + Defination::GetInstance().token_map[token_type[i]]);
+    for(auto i : tk){
+        LOG::INFO(i->GetTokenName() + ":" + Defination::GetInstance().token_map[i->GetTokenType()] + 
+        ":" + std::to_string(i->GetPosition().first) + ":" + std::to_string(i->GetPosition().second));
     }
 }
 
@@ -110,6 +125,18 @@ void Tokenizer::ReadFile(std::string _filename){
     std::string retval(begin, end);
     file_stream = retval;
     LOG::INFO(file_stream);
+    std::string tmp;
+    int begin_id = 0;
+    int found = 0;
+    while(found != std::string::npos){
+        found = file_stream.find('\n', begin_id);
+        tmp.assign(file_stream, begin_id, found - begin_id);
+        source_code.push_back(tmp);
+        begin_id = found + 1;
+    }
+    for(auto i : source_code){
+        LOG::INFO(i);
+    }
 }
 
 void Tokenizer::SetFilename(std::string _filename){
@@ -128,52 +155,46 @@ void Tokenizer::SetRegex(){
 }
 
 void Tokenizer::RunTokenizer(){
-    for(auto i : tk){
-        
-        Defination::token_type token_type_tmp;
-        if(i == "{")
-            token_type_tmp = Defination::TOKEN_SCOPE_BEGIN;
-        else if(i == "}")
-            token_type_tmp = Defination::TOKEN_SCOPE_END;
-        else if(i == "(")
-            token_type_tmp = Defination::TOKEN_SMALL_SCOPE_BEGIN;
-        else if(i == ")")
-            token_type_tmp = Defination::TOKEN_SMALL_SCOPE_END;
-        else if(i == ",")
-            token_type_tmp = Defination::TOKEN_COMMA;
-        else if(i == "if")
-            token_type_tmp = Defination::TOKEN_IF;
-        else if(i == "else")
-            token_type_tmp = Defination::TOKEN_ELSE;
-        else if(i == "function")
-            token_type_tmp = Defination::TOKEN_FUNCTION;
-        else if(i == "return")
-            token_type_tmp = Defination::TOKEN_RETURN;
-        else if(i == "true")
-            token_type_tmp = Defination::TOKEN_BOOL_TRUE;
-        else if(i == "false")
-            token_type_tmp = Defination::TOKEN_BOOL_FALSE;
+    for(auto token : tk){
+        std::string token_name = token->GetTokenName();
+        Defination::token_type token_type;
+        if(token_name == "{")
+            token_type = Defination::TOKEN_SCOPE_BEGIN;
+        else if(token_name == "}")
+            token_type = Defination::TOKEN_SCOPE_END;
+        else if(token_name == "(")
+            token_type = Defination::TOKEN_SMALL_SCOPE_BEGIN;
+        else if(token_name == ")")
+            token_type = Defination::TOKEN_SMALL_SCOPE_END;
+        else if(token_name == ",")
+            token_type = Defination::TOKEN_COMMA;
+        else if(token_name == "if")
+            token_type = Defination::TOKEN_IF;
+        else if(token_name == "else")
+            token_type = Defination::TOKEN_ELSE;
+        else if(token_name == "function")
+            token_type = Defination::TOKEN_FUNCTION;
+        else if(token_name == "return")
+            token_type = Defination::TOKEN_RETURN;
+        else if(token_name == "true")
+            token_type = Defination::TOKEN_BOOL_TRUE;
+        else if(token_name == "false")
+            token_type = Defination::TOKEN_BOOL_FALSE;
         else{
-            token_type_tmp = Defination::TOKEN_UNKNOWN;
+            token_type = Defination::TOKEN_UNKNOWN;
             for(auto reg_tmp : reg){
-                if(std::regex_match(i, reg_tmp.first)){
-                    token_type_tmp = reg_tmp.second;
+                if(std::regex_match(token_name, reg_tmp.first)){
+                    token_type = reg_tmp.second;
                 }
             }
         }
-        // LOG::INFO(i + ":" + token_map[token_type_tmp]);
-        token_type.push_back(token_type_tmp);
+        
+        token->SetTokenType(std::move(token_type));
     }
 }
 
-std::vector<Token> Tokenizer::GetToken(){
-    for(int i = 0; i < tk.size(); i++){
-        Token t;
-        t.SetTokenName(tk[i]);
-        t.SetTokenType(token_type[i]);
-        public_token.push_back(t);
-    }
-    return public_token;
+std::vector<std::shared_ptr<Token>> Tokenizer::GetToken(){
+    return tk;
 }
 
 }

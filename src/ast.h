@@ -4,6 +4,7 @@
 #include "token.h"
 #include "log/log.h"
 #include "defination.h"
+#include "error-process.h"
 namespace openjs{
 class ExpAst{
     
@@ -37,7 +38,7 @@ class MutiExpAst : public ExpAst {
     std::vector<std::unique_ptr<ExpAst>> exp;
 
 public:
-    MutiExpAst(std::vector<std::unique_ptr<ExpAst>> _exp): exp(_exp){}
+    MutiExpAst(std::vector<std::unique_ptr<ExpAst>> _exp): exp(std::move(_exp)){}
 };
 
 /// CallExpAst - Expression class for function calls.
@@ -67,20 +68,26 @@ class PrototypeAst {
 /// FunctionAst - This class represents a function definition itself.
 class FunctionAst {
     std::unique_ptr<PrototypeAst> Proto;
-    std::unique_ptr<MutiExpAst> Body;
+    std::unique_ptr<ExpAst> Body;
 
     public:
-    FunctionAst(std::unique_ptr<PrototypeAst> Proto,
-                std::unique_ptr<MutiExpAst> Body)
-        : Proto(std::move(Proto)), Body(std::move(Body)) {}
+    FunctionAst(std::unique_ptr<PrototypeAst> _Proto,
+                std::unique_ptr<ExpAst> _Body)
+        : Proto(std::move(_Proto)), Body(std::move(_Body)) {}
 };
 
 class BuildTree {
-
-    void Run(){
-        auto t = std::make_unique<Tokenizer>();   
+public:
+    std::unique_ptr<Tokenizer> tokenizer;
+    void SetTokenizer(std::unique_ptr<Tokenizer> _tokenizer){
+        tokenizer = std::move(_tokenizer);
+    }
+    void Run(){   
+        error_process = std::move(std::make_unique<ErrorProcess>());
         // Get token from Token class
-        token = t->GetToken();
+        token = tokenizer->GetToken();
+
+        error_process->SetSouceCode(tokenizer->GetSourceCode());
         while(!TokenIsEnd()){
             auto token_tmp = GetToken();
             if(token_tmp.GetTokenType() == Defination::TOKEN_FUNCTION){
@@ -95,94 +102,130 @@ class BuildTree {
     }
 
     std::unique_ptr<ExpAst> HandleCallFunction(){
-        if(!GetToken().GetTokenType() == Defination::TOKEN_ID)
-            LOG::ERROR("Parser call token id error");
+        if(!(GetToken().GetTokenType() == Defination::TOKEN_ID))
+            error_process->PrintError(GetToken(), "Parser call token id error");
+
         NextToken();
-        if(!GetToken().GetTokenType() == Defination::TOKEN_SMALL_SCOPE_BEGIN)
-            LOG::ERROR("Parser call '(' error");
+        if(!(GetToken().GetTokenType() == Defination::TOKEN_SMALL_SCOPE_BEGIN))
+           error_process->PrintError(GetToken(), "Parser call '(' error");
+
         NextToken();
         auto exp = HandlePrimaryExp();
 
         while(exp){
-            if(!GetToken().GetTokenType() == Defination::TOKEN_COMMA){
+            if(!(GetToken().GetTokenType() == Defination::TOKEN_COMMA)){
                 NextToken();
                 break;
             }
         }
+        return nullptr;
     }
 
     std::unique_ptr<ExpAst> HandlePrimaryExp(){
-
+        return nullptr;
     }
 
     std::unique_ptr<FunctionAst> HandleFunction(){
         auto proto = HandleProtoType();
         if(!proto)
-            LOG::ERROR("Parser function proto type error");
-        if(!GetToken().GetTokenType() == Defination::TOKEN_SCOPE_BEGIN){
-            LOG::ERROR("Parser function scope begin error");
-        }
+            error_process->PrintError(GetToken(), "Parser function proto type error");
+        if(!(GetToken().GetTokenType() == Defination::TOKEN_SCOPE_BEGIN))
+            error_process->PrintError(GetToken(), "Parser function scope begin error");
         NextToken();
         auto exp = HandleExp();
-        if(!GetToken().GetTokenType() == Defination::TOKEN_SCOPE_END){
-            LOG::ERROR("Parser function scope end error");
+        if(!(GetToken().GetTokenType() == Defination::TOKEN_SCOPE_END)){
+            error_process->PrintError(GetToken(), "Parser function scope end error");
         }
         NextToken();
         
         LOG::INFO("Parser function sucessfully");
-        return std::make_unique<FunctionAst>(proto, exp);
+        return std::make_unique<FunctionAst>(std::move(proto), std::move(exp));
     }
 
-    std::unique_ptr<MutiExpAst> HandleExp(){
+    std::unique_ptr<ExpAst> HandleExp(){
         std::vector<std::unique_ptr<ExpAst>> exp;
 
-        
+        while((GetToken().GetTokenType() == Defination::TOKEN_IF) 
+            ||(GetToken().GetTokenType() == Defination::TOKEN_ID)
+            ||(GetToken().GetTokenType() == Defination::TOKEN_NUMBER)
+        ){
+            if(GetToken().GetTokenType() == Defination::TOKEN_IF){
+                auto exp_primary = HandleIfExp();
+                exp.push_back(std::move(exp_primary));
+            }
+            else if(GetToken().GetTokenType() == Defination::TOKEN_ID
+                ||GetToken().GetTokenType() == Defination::TOKEN_NUMBER){
+                auto exp_primary = HandlePrimaryExp();
+                exp.push_back(std::move(exp_primary));
+            }
+        }
 
         NextToken();
-        return std::make_unique<MutiExpAst>(exp);
+        return std::make_unique<MutiExpAst>(std::move(exp));
     }
 
+    std::unique_ptr<ExpAst> HandleIfExp(){
+        if(GetToken().GetTokenType() != Defination::TOKEN_IF)
+            error_process->PrintError(GetToken(), "Parser if exp error");
+        NextToken();
 
+        if(GetToken().GetTokenType() != Defination::TOKEN_SMALL_SCOPE_BEGIN)
+            error_process->PrintError(GetToken(), "Parser '(' error");
+        NextToken();
+
+        return nullptr;
+    }
 
     std::unique_ptr<ExpAst> HandleExternExp(){
-
+        return nullptr;
     }
 
     std::unique_ptr<ExpAst> ParserNumber(){
-
+        double num = std::stod(GetToken().GetTokenName());
+        NextToken();
+        return std::make_unique<NumberExpAst>(num);
     }
 
-    std::unique_ptr<ExpAst> ParserId(){
-        
+    std::unique_ptr<ExpAst> ParserVariable(){
+        std::string var_name = GetToken().GetTokenName();
+        NextToken();
+        return std::make_unique<VariableExpAst>(var_name);
     }
 
     std::unique_ptr<PrototypeAst> HandleProtoType(){
-        if(!GetToken().GetTokenType() == Defination::TOKEN_ID)
-            LOG::ERROR("Parser proto id error");
+
+        std::vector<std::string> args;
+
+        if(!(GetToken().GetTokenType() == Defination::TOKEN_ID))
+            error_process->PrintError(GetToken(), "Parser proto id error");
         // store function name
         std::string function_name = GetToken().GetTokenName();
         NextToken();
-        if(!GetToken().GetTokenType() == Defination::TOKEN_SMALL_SCOPE_BEGIN)
-            LOG::ERROR("Parser proto scope begin");
-        std::vector<std::string> args;
+
+        if(!(GetToken().GetTokenType() == Defination::TOKEN_SMALL_SCOPE_BEGIN))
+            error_process->PrintError(GetToken(), "Parser proto scope begin");
+        NextToken();
+        
         while(GetToken().GetTokenType() == Defination::TOKEN_ID){
             args.push_back(GetToken().GetTokenName());
             NextToken();
-            if(GetToken().GetTokenType() != Defination::TOKEN_COMMA)
+
+            if(!(GetToken().GetTokenType() == Defination::TOKEN_COMMA))
                 break;
+            NextToken();
         }
-        if(!GetToken().GetTokenType() == Defination::TOKEN_SMALL_SCOPE_END)
-            LOG::ERROR("Parser proto scope end");
-        
-        LOG::INFO("Parser proto type successful");
-        // consume this token.
+
+        if(!(GetToken().GetTokenType() == Defination::TOKEN_SMALL_SCOPE_END))
+            error_process->PrintError(GetToken(), "Parser proto scope end");
         NextToken();
-        return std::make_unique<PrototypeAst>(function_name, args);
+
+        LOG::INFO("Parser proto type successful");
+        return std::make_unique<PrototypeAst>(function_name, std::move(args));
     }
 
     Token GetToken(){
         if(!TokenIsEnd())
-            return token[token_index];
+            return *token[token_index];
         else
             return Token();
     }
@@ -197,7 +240,8 @@ class BuildTree {
         return true;
     }
     int token_index = 0;
-    std::vector<Token> token;
+    std::vector<std::shared_ptr<Token>> token;
+    std::unique_ptr<ErrorProcess> error_process;
 };
 
 }
