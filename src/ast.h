@@ -133,19 +133,20 @@ public:
         error_process->SetSouceCode(tokenizer->GetSourceCode());
         while(!TokenIsEnd()){
             auto token_tmp = GetToken();
+            //NextToken();
             if(token_tmp.GetTokenType() == Defination::TOKEN_FUNCTION){
-                NextToken();
                 auto fun = HandleFunction();
                 DebugPrintFunction();
             }
             else if(token_tmp.GetTokenType() == Defination::TOKEN_ID){
-                NextToken();
+                
                 HandleCallFunction();
             }
         }
     }
 
     std::unique_ptr<ExpAst> HandleCallFunction(){
+        std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
         if(!(GetToken().GetTokenType() == Defination::TOKEN_ID))
             error_process->PrintError(GetToken(), "Parser call token id error");
 
@@ -241,6 +242,7 @@ public:
     }
 
     std::unique_ptr<FunctionAst> HandleFunction(){
+        //NextToken();
         auto proto = HandleProtoType();
         if(!proto)
             error_process->PrintError(GetToken(), "Parser function proto type error");
@@ -278,7 +280,6 @@ public:
                 break;
         }
 
-        NextToken();
         return std::make_unique<MutiExpAst>(std::move(exp));
     }
 
@@ -334,17 +335,17 @@ public:
 
         if(!(GetToken().GetTokenType() == Defination::TOKEN_ID))
             error_process->PrintError(GetToken(), "Parser proto id error");
-        std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
+        //std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
         // store function name
         std::string function_name = GetToken().GetTokenName();
         NextToken();
-        std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
+        //std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
         if(!(GetToken().GetTokenType() == Defination::TOKEN_SMALL_SCOPE_BEGIN))
             error_process->PrintError(GetToken(), "Parser proto scope begin");
         NextToken();
-        std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
+        //std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
         while(GetToken().GetTokenType() == Defination::TOKEN_ID){
-            std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
+            //std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
             args.push_back(GetToken().GetTokenName());
             NextToken();
 
@@ -352,7 +353,7 @@ public:
                 break;
             NextToken();
         }
-        std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
+        //std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
         if(!(GetToken().GetTokenType() == Defination::TOKEN_SMALL_SCOPE_END))
             error_process->PrintError(GetToken(), "Parser proto scope end");
         NextToken();

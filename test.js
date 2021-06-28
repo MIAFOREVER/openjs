@@ -6,7 +6,7 @@
 //ertge
 function fibo(num,pl) {//[spdlv5g4qgr]
     if (   num  <   3) {//cxzvpoewt[g23]
-              c= 2//fasduilhf
+              c= 2 //fasduilhf
     } else {//sdaulfhlsad
         c = 2
         b = a + 2
@@ -19,8 +19,11 @@ function fibo(num,pl) {//[spdlv5g4qgr]
 
 function test(num){
     if(n>200){
-        return false
+        p = 9
+    }else{
+        pl = l
     }
+
 }//
 
 fibo(20,3)// 
