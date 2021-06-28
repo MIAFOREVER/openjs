@@ -5,14 +5,22 @@
 
 //ertge
 function fibo(num,pl) {//[spdlv5g4qgr]
-       if (   num  <   3) {//cxzvpoewt[g23]
-              return 1//fasduilhf
+    if (   num  <   3) {//cxzvpoewt[g23]
+              c= 2//fasduilhf
     } else {//sdaulfhlsad
-        return fibo(num-1)+fibo(num-2)//sdalfuhas
+        c = 2
+        b = a + 2
+        f = fs / 2
+        sdf = sf * 5
+        m = 9//sdalfuhas
     }
 }
 
 
-function test(num){if(n>200){return false}}//
+function test(num){
+    if(n>200){
+        return false
+    }
+}//
 
 fibo(20,3)// 

@@ -21,11 +21,12 @@ public:
         "TOKEN_SMALL_SCOPE_END",
         "TOKEN_IF",
         "TOKEN_ELSE",
-        "TOKEN_ORERATOR",
+        "TOKEN_OPERATOR",
         "TOKEN_RETURN",
         "TOKEN_BOOL_TRUE",
         "TOKEN_BOOL_FALSE",
         "TOKEN_COMMA",
+        "TOKEN_EQUAL",
         "TOKEN_UNKNOWN",
     }; 
     enum token_type{
@@ -38,11 +39,12 @@ public:
         TOKEN_SMALL_SCOPE_END,
         TOKEN_IF,
         TOKEN_ELSE,
-        TOKEN_ORERATOR,
+        TOKEN_OPERATOR,
         TOKEN_RETURN,
         TOKEN_BOOL_TRUE,
         TOKEN_BOOL_FALSE,
         TOKEN_COMMA,
+        TOKEN_EQUAL,
         TOKEN_UNKNOWN,
     };
 

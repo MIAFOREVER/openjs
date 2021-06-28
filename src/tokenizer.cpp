@@ -107,6 +107,7 @@ void Tokenizer::SetOperatorCode(){
     operator_code.push_back("}");
     operator_code.push_back(">");
     operator_code.push_back("<");
+    operator_code.push_back("=");
 }
 
 bool Tokenizer::InOperatorCode(char s){
@@ -147,7 +148,7 @@ void Tokenizer::SetRegex(){
     std::vector<std::pair<std::string, Defination::token_type>> tmp;
     tmp.push_back(std::make_pair("[a-zA-Z][a-zA-Z0-9]*", Defination::TOKEN_ID));
     tmp.push_back(std::make_pair("^(\\-|\\+)?\\d+(\\.\\d+)?", Defination::TOKEN_NUMBER));
-    tmp.push_back(std::make_pair("[<>\\+\\-\\*\\\\]", Defination::TOKEN_ORERATOR));
+    tmp.push_back(std::make_pair("[<>\\+\\-\\*\\/]", Defination::TOKEN_OPERATOR));
     for(auto i : tmp){
         std::regex r(i.first);
         reg.push_back(std::make_pair(r, i.second));
@@ -180,6 +181,8 @@ void Tokenizer::RunTokenizer(){
             token_type = Defination::TOKEN_BOOL_TRUE;
         else if(token_name == "false")
             token_type = Defination::TOKEN_BOOL_FALSE;
+        else if(token_name == "=")
+            token_type = Defination::TOKEN_EQUAL;
         else{
             token_type = Defination::TOKEN_UNKNOWN;
             for(auto reg_tmp : reg){
