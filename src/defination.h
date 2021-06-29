@@ -27,6 +27,7 @@ public:
         "TOKEN_BOOL_FALSE",
         "TOKEN_COMMA",
         "TOKEN_EQUAL",
+        "TOKEN_EOF",
         "TOKEN_UNKNOWN",
     }; 
     enum token_type{
@@ -45,6 +46,7 @@ public:
         TOKEN_BOOL_FALSE,
         TOKEN_COMMA,
         TOKEN_EQUAL,
+        TOKEN_EOF,
         TOKEN_UNKNOWN,
     };
 

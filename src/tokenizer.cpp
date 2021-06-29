@@ -194,6 +194,9 @@ void Tokenizer::RunTokenizer(){
         
         token->SetTokenType(std::move(token_type));
     }
+    auto token = std::make_shared<Token>("EOF");
+    token->SetTokenType(Defination::TOKEN_EOF);
+    tk.push_back(token);
 }
 
 std::vector<std::shared_ptr<Token>> Tokenizer::GetToken(){

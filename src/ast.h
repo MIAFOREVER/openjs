@@ -131,9 +131,8 @@ public:
         token = tokenizer->GetToken();
 
         error_process->SetSouceCode(tokenizer->GetSourceCode());
-        while(!TokenIsEnd()){
+        while(GetToken().GetTokenType() != Defination::TOKEN_EOF){
             auto token_tmp = GetToken();
-            //NextToken();
             if(token_tmp.GetTokenType() == Defination::TOKEN_FUNCTION){
                 auto fun = HandleFunction();
                 DebugPrintFunction();
@@ -146,24 +145,28 @@ public:
     }
 
     std::unique_ptr<ExpAst> HandleCallFunction(){
-        std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
         if(!(GetToken().GetTokenType() == Defination::TOKEN_ID))
             error_process->PrintError(GetToken(), "Parser call token id error");
+        std::string function_name = GetToken().GetTokenName();
 
         NextToken();
         if(!(GetToken().GetTokenType() == Defination::TOKEN_SMALL_SCOPE_BEGIN))
            error_process->PrintError(GetToken(), "Parser call '(' error");
 
+        std::vector<std::unique_ptr<ExpAst>> args;
         NextToken();
         auto exp = HandlePrimaryExp();
+        args.push_back(std::move(exp));
 
-        while(exp){
-            if(!(GetToken().GetTokenType() == Defination::TOKEN_COMMA)){
-                NextToken();
+        while(true){
+            if(!Check(GetToken(), Defination::TOKEN_COMMA))
                 break;
-            }
+            NextToken();
+            exp = std::move(HandlePrimaryExp());
+            args.push_back(std::move(exp));
         }
-        return nullptr;
+        CheckAndNextToken(GetToken(), Defination::TOKEN_SMALL_SCOPE_END);
+        return std::make_unique<CallExpAst>(function_name, std::move(args));
     }
 
     std::unique_ptr<ExpAst> HandlePrimaryExp(){
@@ -242,7 +245,7 @@ public:
     }
 
     std::unique_ptr<FunctionAst> HandleFunction(){
-        //NextToken();
+        CheckAndNextToken(GetToken(), Defination::TOKEN_FUNCTION);
         auto proto = HandleProtoType();
         if(!proto)
             error_process->PrintError(GetToken(), "Parser function proto type error");
@@ -284,13 +287,9 @@ public:
     }
 
     std::unique_ptr<ExpAst> HandleIfExp(){
-        if(GetToken().GetTokenType() != Defination::TOKEN_IF)
-            error_process->PrintError(GetToken(), "Parser if exp error");
-        NextToken();
+        CheckAndNextToken(GetToken(), Defination::TOKEN_IF);
 
-        if(GetToken().GetTokenType() != Defination::TOKEN_SMALL_SCOPE_BEGIN)
-            error_process->PrintError(GetToken(), "Parser '(' error");
-        NextToken();
+        CheckAndNextToken(GetToken(), Defination::TOKEN_SMALL_SCOPE_BEGIN);
 
         auto condition = HandleBinaryExp();
 
@@ -335,17 +334,16 @@ public:
 
         if(!(GetToken().GetTokenType() == Defination::TOKEN_ID))
             error_process->PrintError(GetToken(), "Parser proto id error");
-        //std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
+
         // store function name
         std::string function_name = GetToken().GetTokenName();
         NextToken();
-        //std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
+
         if(!(GetToken().GetTokenType() == Defination::TOKEN_SMALL_SCOPE_BEGIN))
             error_process->PrintError(GetToken(), "Parser proto scope begin");
         NextToken();
-        //std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
+
         while(GetToken().GetTokenType() == Defination::TOKEN_ID){
-            //std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
             args.push_back(GetToken().GetTokenName());
             NextToken();
 
@@ -353,7 +351,7 @@ public:
                 break;
             NextToken();
         }
-        //std::cout << "test:\t" << GetToken().GetTokenName() << std::endl;
+
         if(!(GetToken().GetTokenType() == Defination::TOKEN_SMALL_SCOPE_END))
             error_process->PrintError(GetToken(), "Parser proto scope end");
         NextToken();
@@ -371,11 +369,11 @@ public:
 
     void NextToken(){
         token_index ++;
-        std::cout << "TOKEN:\t" << (*token[token_index]).GetTokenName() << std::endl;
+        // std::cout << "TOKEN:\t" << (*token[token_index]).GetTokenName() << std::endl;
     }
 
     bool TokenIsEnd(int i = 0){
-        if(token_index + i < token.size() - 1)
+        if(token_index + i <= token.size() - 1)
             return false;
         return true;
     }
