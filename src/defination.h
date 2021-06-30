@@ -28,6 +28,7 @@ public:
         "TOKEN_COMMA",
         "TOKEN_EQUAL",
         "TOKEN_EOF",
+        "TOKEN_EXTERN",
         "TOKEN_UNKNOWN",
     }; 
     enum token_type{
@@ -47,6 +48,7 @@ public:
         TOKEN_COMMA,
         TOKEN_EQUAL,
         TOKEN_EOF,
+        TOKEN_EXTERN,
         TOKEN_UNKNOWN,
     };
 

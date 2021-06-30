@@ -11,16 +11,11 @@ class Time
 private:
     /* data */
     std::map<std::string, timeval*> store;
-    static std::mutex mtx;
-    static Time* GetPointer(){
-        mtx.lock();
-        if(!point)
-            point = new Time;
-        mtx.unlock();
-        return point;
-    }
-    static Time* point;
 public:
+    static Time& GetInstance(){
+        static Time instance;
+        return instance;
+    }
     void BeginTime(std::string s){
         timeval* tmp = new timeval;
         store[s] = tmp;

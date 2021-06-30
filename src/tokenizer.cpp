@@ -19,7 +19,7 @@ void Tokenizer::Run(){
     SetRegex();
     RunTokenizer();
 
-    DebugPrintToken();
+    // DebugPrintToken();
 }
 
 std::vector<std::string> Tokenizer::GetSourceCode(){
@@ -125,7 +125,7 @@ void Tokenizer::ReadFile(std::string _filename){
     std::istreambuf_iterator<char> end;
     std::string retval(begin, end);
     file_stream = retval;
-    LOG::INFO(file_stream);
+    //LOG::INFO(file_stream);
     std::string tmp;
     int begin_id = 0;
     int found = 0;
@@ -134,9 +134,6 @@ void Tokenizer::ReadFile(std::string _filename){
         tmp.assign(file_stream, begin_id, found - begin_id);
         source_code.push_back(tmp);
         begin_id = found + 1;
-    }
-    for(auto i : source_code){
-        LOG::INFO(i);
     }
 }
 
@@ -183,6 +180,8 @@ void Tokenizer::RunTokenizer(){
             token_type = Defination::TOKEN_BOOL_FALSE;
         else if(token_name == "=")
             token_type = Defination::TOKEN_EQUAL;
+        else if(token_name == "extern")
+            token_type = Defination::TOKEN_EXTERN;
         else{
             token_type = Defination::TOKEN_UNKNOWN;
             for(auto reg_tmp : reg){

@@ -27,13 +27,6 @@ public:
                 std::cout << "^";
         }
         std::cout << std::endl;
-        // for(int i = 0; i < source_code[tmp.first].size(); i++){
-        //     if(i != tmp.second)
-        //         std::cout << " ";
-        //     else
-        //         std::cout << "|";
-        // }
-        // std::cout << "\n";
 
         std::cerr << reason << std::endl;
         exit(0);
