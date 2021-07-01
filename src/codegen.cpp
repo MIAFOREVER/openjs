@@ -56,8 +56,8 @@ llvm::Value* openjs::AssignExpAst::codegen(){
 }
 
 llvm::Value* openjs::MutiExpAst::codegen(){
-    for(auto i : exp)
-        i->codegen();
+    for(int i = 0; i < exp.size(); i++)
+        exp[i]->codegen();
     return nullptr;
 }
 
@@ -92,7 +92,7 @@ llvm::Value* openjs::IfExpAst::codegen(){
     ThenBB = CodeGen::Builder->GetInsertBlock();
 
     // Emit else block.
-    CodeGen::TheFunction->getBasicBlockList().push_back(ElseBB);
+    TheFunction->getBasicBlockList().push_back(ElseBB);
     CodeGen::Builder->SetInsertPoint(ElseBB);
 
     llvm::Value *ElseV = else_exp->codegen();
