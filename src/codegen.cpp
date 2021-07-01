@@ -51,14 +51,66 @@ llvm::Value* openjs::BinaryExpAst::codegen() {
 }
 
 llvm::Value* openjs::AssignExpAst::codegen(){
-
+    llvm::Value* V = var->codegen();
+    return nullptr;
 }
 
 llvm::Value* openjs::MutiExpAst::codegen(){
-
+    for(auto i : exp)
+        i->codegen();
+    return nullptr;
 }
 
 llvm::Value* openjs::IfExpAst::codegen(){
+    llvm::Value *CondV = condition->codegen();
+    if (!CondV)
+        return nullptr;
+
+    // Convert condition to a bool by comparing non-equal to 0.0.
+    CondV = CodeGen::Builder->CreateFCmpONE(
+        CondV, llvm::ConstantFP::get(*CodeGen::TheContext, llvm::APFloat(0.0)), "ifcond");
+
+    llvm::Function *TheFunction = CodeGen::Builder->GetInsertBlock()->getParent();
+
+    // Create blocks for the then and else cases.  Insert the 'then' block at the
+    // end of the function.
+    llvm::BasicBlock *ThenBB = llvm::BasicBlock::Create(*CodeGen::TheContext, "then", TheFunction);
+    llvm::BasicBlock *ElseBB = llvm::BasicBlock::Create(*CodeGen::TheContext, "else");
+    llvm::BasicBlock *MergeBB = llvm::BasicBlock::Create(*CodeGen::TheContext, "ifcont");
+
+    CodeGen::Builder->CreateCondBr(CondV, ThenBB, ElseBB);
+
+    // Emit then value.
+    CodeGen::Builder->SetInsertPoint(ThenBB);
+
+    llvm::Value *ThenV = if_exp->codegen();
+    if (!ThenV)
+        return nullptr;
+
+    CodeGen::Builder->CreateBr(MergeBB);
+    // Codegen of 'Then' can change the current block, update ThenBB for the PHI.
+    ThenBB = CodeGen::Builder->GetInsertBlock();
+
+    // Emit else block.
+    CodeGen::TheFunction->getBasicBlockList().push_back(ElseBB);
+    CodeGen::Builder->SetInsertPoint(ElseBB);
+
+    llvm::Value *ElseV = else_exp->codegen();
+    if (!ElseV)
+        return nullptr;
+
+    CodeGen::Builder->CreateBr(MergeBB);
+    // Codegen of 'Else' can change the current block, update ElseBB for the PHI.
+    ElseBB = CodeGen::Builder->GetInsertBlock();
+
+    // Emit merge block.
+    TheFunction->getBasicBlockList().push_back(MergeBB);
+    CodeGen::Builder->SetInsertPoint(MergeBB);
+    llvm::PHINode *PN = CodeGen::Builder->CreatePHI(llvm::Type::getDoubleTy(*CodeGen::TheContext), 2, "iftmp");
+
+    PN->addIncoming(ThenV, ThenBB);
+    PN->addIncoming(ElseV, ElseBB);
+    return PN;
 
 }
 
