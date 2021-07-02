@@ -51,12 +51,12 @@ llvm::Value* openjs::BinaryExpAst::codegen() {
 }
 
 llvm::Value* openjs::AssignExpAst::codegen(){
-    llvm::Value* V = var->codegen();
+    // var = std::move(RHS->codegen());
     return nullptr;
 }
 
 llvm::Value* openjs::MutiExpAst::codegen(){
-    for(int i = 0; i < exp.size(); i++)
+    for(int i = 0; i < (int)exp.size(); i++)
         exp[i]->codegen();
     return nullptr;
 }

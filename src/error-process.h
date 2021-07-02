@@ -14,13 +14,13 @@ public:
 
     void PrintError(Token tk, std::string reason){
         auto tmp = tk.GetPosition();
-        for(int i = 0; i < source_code[tmp.first].size(); i++)
+        for(int i = 0; i < (int)source_code[tmp.first].size(); i++)
             std::cout << "=";
         std::cout << "\n";
         
         std::cout << source_code[tmp.first] << std::endl;
 
-        for(int i = 0; i < source_code[tmp.first].size(); i++){
+        for(int i = 0; i < (int)source_code[tmp.first].size(); i++){
             if(i != tmp.second)
                 std::cout << " ";
             else

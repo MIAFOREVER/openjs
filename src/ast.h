@@ -155,7 +155,7 @@ public:
     }
 
     void Run(){   
-        error_process = std::move(std::make_unique<ErrorProcess>());
+        error_process = std::make_unique<ErrorProcess>();
         // Get token from Token class
         token = tokenizer->GetToken();
 
@@ -192,7 +192,7 @@ public:
             if(!Check(GetToken(), Defination::TOKEN_COMMA))
                 break;
             NextToken();
-            exp = std::move(HandlePrimaryExp());
+            exp = HandlePrimaryExp();
             args.push_back(std::move(exp));
         }
         CheckAndNextToken(GetToken(), Defination::TOKEN_SMALL_SCOPE_END);
@@ -202,20 +202,21 @@ public:
     std::unique_ptr<ExpAst> HandlePrimaryExp(){
         if(GetToken().GetTokenType() == Defination::TOKEN_ID && 
         GetToken(1).GetTokenType() == Defination::TOKEN_EQUAL){
-            return std::move(HandleAssignmentExp());
+            return HandleAssignmentExp();
         }
         else if(GetToken().GetTokenType() == Defination::TOKEN_NUMBER &&
         GetToken(1).GetTokenType() == Defination::TOKEN_OPERATOR){
-            return std::move(HandleBinaryExp());
+            return HandleBinaryExp();
         }
         else if((GetToken().GetTokenType() == Defination::TOKEN_NUMBER || GetToken().GetTokenType() == Defination::TOKEN_ID) &&
         GetToken(1).GetTokenType() != Defination::TOKEN_OPERATOR){
-            return std::move(HandleSingleExp());
+            return HandleSingleExp();
         }
         return nullptr;
     }
 
     std::unique_ptr<ExpAst> HandleSingleExp(){
+        // Parser a single exp
         if(Check(GetToken(), Defination::TOKEN_ID)){
             std::string var = GetToken().GetTokenName();
             NextToken();
@@ -231,6 +232,8 @@ public:
     }
 
     std::unique_ptr<AssignExpAst> HandleAssignmentExp(){
+        
+        // var 
         auto var = std::make_unique<VariableExpAst>(GetToken().GetTokenName());
         NextToken();
 
@@ -248,6 +251,8 @@ public:
 
     std::unique_ptr<BinaryExpAst> HandleBinaryExp(){
         std::unique_ptr<ExpAst> LHS = nullptr;
+
+        // LHS
         if(Check(GetToken(), Defination::TOKEN_ID)){
             LHS = std::make_unique<VariableExpAst>(GetToken().GetTokenName());
             NextToken();
@@ -257,10 +262,12 @@ public:
             NextToken();
         }
 
+        // LHS opcode
         Check(GetToken(), Defination::TOKEN_OPERATOR);
         NextToken();
         char op = GetToken().GetTokenName()[0];
 
+        // LHS opcode RHS
         std::unique_ptr<ExpAst> RHS = nullptr;
         if(Check(GetToken(), Defination::TOKEN_ID)){
             RHS = std::make_unique<VariableExpAst>(GetToken().GetTokenName());
@@ -368,7 +375,7 @@ public:
         
         auto proto = HandleProtoType();
         
-        return std::move(proto);
+        return proto;
     }
 
     std::unique_ptr<ExpAst> ParserNumber(){
@@ -419,7 +426,7 @@ public:
     }
 
     bool TokenIsEnd(int i = 0){
-        if(token_index + i <= token.size() - 1)
+        if(token_index + i <= (int)token.size() - 1)
             return false;
         return true;
     }
